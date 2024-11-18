@@ -45,3 +45,8 @@ print("Empty Matrix with 0 Mean and 1 STD: ", x)
 
 x = torch.diag(torch.ones(5))
 print("Diagonal Matrix: ", x)
+
+y = torch.arange(4)
+print(y)
+print(y.bool())
+print(y.short()) # convert the dtype to int16

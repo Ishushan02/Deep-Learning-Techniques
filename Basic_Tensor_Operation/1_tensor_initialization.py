@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 # setting up the device
 device = torch.device("mps")
@@ -50,3 +51,15 @@ y = torch.arange(4)
 print(y)
 print(y.bool())
 print(y.short()) # convert the dtype to int16
+print(y.long()) # convert the dtype to int64
+print(y.half()) # convert the dtype to float16
+print(y.double()) # float 64
+
+
+np_array = np.zeros(shape=(4, 5))
+tensor = torch.from_numpy(np_array)
+
+nparr = tensor.numpy()
+print(np_array)
+print(tensor)
+print(nparr)

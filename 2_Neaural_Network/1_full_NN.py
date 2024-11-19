@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
-
+import cv2
 
 '''
 All the dataset documentation  of Pytorch : https://pytorch.org/vision/main/datasets.html
@@ -58,7 +58,6 @@ model = NN(input_size=input_size, classes=num_classes).to(device)
 lossfn = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr = learning_rate)
 
-'''
 # Train the Network, 1 epoch means the network has seen all the datasets in the images
 for each_epoch in range(100):
     epoch_loss = 0.0  # Accumulate loss for the epoch
@@ -102,10 +101,9 @@ for each_epoch in range(100):
 torch.save(model.state_dict(), f = "/Users/ishananand/Desktop/Pytorch/2_Neaural_Network/Model/mnistModel.pth")
 print(f"Model saved to Model Path")
 
-'''
+
 
 test_model = NN(input_size=input_size, classes=num_classes)
-
 # Load the saved model weights
 test_model.load_state_dict(torch.load('/Users/ishananand/Desktop/Pytorch/2_Neaural_Network/Model/mnistModel.pth'))
 
@@ -126,6 +124,7 @@ def testAccuracy(model, loader):
             x = x.to(device)
             y = y.to(device)
             x = x.reshape(x.shape[0], -1)
+            # print(x.shape)
 
             scores = model(x)
 
@@ -138,5 +137,22 @@ def testAccuracy(model, loader):
     return accuracy
 
 
-testAccuracy = testAccuracy(test_model, test_dataLoader)
-print(f"Test Accuracy is  {testAccuracy}")
+# testAccuracy = testAccuracy(test_model, test_dataLoader)
+# print(f"Test Accuracy is  {testAccuracy}")
+def testnewImg(imgPath, test_model):
+    testImage = cv2.imread(imgPath, 0)
+    testimgreshaped = cv2.resize(testImage, (28, 28))
+
+    img = torch.tensor(testimgreshaped, dtype=torch.float32)
+    print(testImage.shape, "-- Reshaped Image ", testimgreshaped.shape)
+    print(img.shape)
+
+    img = img.unsqueeze(0)
+    print(img.shape)
+
+    flattened_testimage = img.view(img.shape[0], -1)
+    test_score = test_model(flattened_testimage)
+    val, idx = test_score.max(1)
+    return  idx
+
+testnewImg("/Users/ishananand/Desktop/Pytorch/2_Neaural_Network/test_image.png", test_model)

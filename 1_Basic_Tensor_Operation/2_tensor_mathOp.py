@@ -208,7 +208,7 @@ print(f"Mean of x is {meanX}")
 
 y = torch.tensor([32, 76, 11, 12, 56, 54, 89])
 print(f" y is {y}")
-z  =torch.eq(x, y)
+z = torch.eq(x, y)
 
 print(f" z {z} Which elemts are equal in x and y")
 

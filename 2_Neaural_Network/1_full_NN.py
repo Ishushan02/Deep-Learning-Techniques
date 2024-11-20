@@ -42,10 +42,10 @@ num_epochs = 10
 
 
 # Loading the Dataset Mnist
-train_data = datasets.MNIST(root = '/Users/ishananand/Desktop/Pytorch/2_Neaural_Network/', train=True, transform=transforms.ToTensor(), download=True)
+train_data = datasets.MNIST(root = '/Users/ishananand/Desktop/Pytorch/', train=True, transform=transforms.ToTensor(), download=True)
 train_dataLoader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
-test_data = datasets.MNIST(root = '/Users/ishananand/Desktop/Pytorch/2_Neaural_Network/', train=False, transform=transforms.ToTensor(), download=True)
+test_data = datasets.MNIST(root = '/Users/ishananand/Desktop/Pytorch/', train=False, transform=transforms.ToTensor(), download=True)
 test_dataLoader = DataLoader(test_data, batch_size=batch_size, shuffle=True)
 
 print(f"Train Dataset is {train_data.data.shape}")
@@ -88,7 +88,7 @@ for each_epoch in range(100):
             predictions = torch.argmax(scores, dim=1)  # Get predicted class labels
             correct_predictions += (predictions == target).sum().item()  # Count correct predictions
             total_samples += target.size(0)  # Update total number of samples
-
+        
     # Compute average loss and accuracy for the epoch
     average_loss = epoch_loss / len(train_dataLoader)  # Average loss
     accuracy = correct_predictions / total_samples * 100  # Accuracy as percentage
@@ -98,14 +98,14 @@ for each_epoch in range(100):
 
 
 
-torch.save(model.state_dict(), f = "/Users/ishananand/Desktop/Pytorch/2_Neaural_Network/Model/mnistModel.pth")
+torch.save(model.state_dict(), f = "/Users/ishananand/Desktop/Pytorch/Model/mnistModel.pth")
 print(f"Model saved to Model Path")
 
 
 
 test_model = NN(input_size=input_size, classes=num_classes)
 # Load the saved model weights
-test_model.load_state_dict(torch.load('/Users/ishananand/Desktop/Pytorch/2_Neaural_Network/Model/mnistModel.pth'))
+test_model.load_state_dict(torch.load('/Users/ishananand/Desktop/Pytorch/Model/mnistModel.pth'))
 
 # Move the model to the appropriate device (CPU or GPU)
 # 5. Set the model to evaluation mode (important for inference)
@@ -155,4 +155,4 @@ def testnewImg(imgPath, test_model):
     val, idx = test_score.max(1)
     return  idx
 
-testnewImg("/Users/ishananand/Desktop/Pytorch/2_Neaural_Network/test_image.png", test_model)
+testnewImg("/Users/ishananand/Desktop/Pytorch/test_image.png", test_model)

@@ -1,2 +1,5 @@
-2_Neaural_Network/MNIST
-2_Neaural_Network/Model
+/MNIST
+/Model
+/cifar-10-batches-py
+/cifar-10-python.tar.gz
+/FashionMNIST

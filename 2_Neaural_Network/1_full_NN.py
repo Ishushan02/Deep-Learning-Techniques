@@ -42,10 +42,10 @@ num_epochs = 10
 
 
 # Loading the Dataset Mnist
-train_data = datasets.MNIST(root = '/Users/ishananand/Desktop/Pytorch/', train=True, transform=transforms.ToTensor(), download=True)
+train_data = datasets.MNIST(root = '/Users/ishananand/Desktop/Pytorch/dataset/', train=True, transform=transforms.ToTensor(), download=True)
 train_dataLoader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
-test_data = datasets.MNIST(root = '/Users/ishananand/Desktop/Pytorch/', train=False, transform=transforms.ToTensor(), download=True)
+test_data = datasets.MNIST(root = '/Users/ishananand/Desktop/Pytorch/dataset/', train=False, transform=transforms.ToTensor(), download=True)
 test_dataLoader = DataLoader(test_data, batch_size=batch_size, shuffle=True)
 
 print(f"Train Dataset is {train_data.data.shape}")

@@ -40,12 +40,12 @@ loss = nn.CrossEntropyLoss()
 
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-train_data = datasets.FashionMNIST("/Users/ishananand/Desktop/Pytorch/", train = True, transform=transforms.ToTensor(), download=True)
+train_data = datasets.FashionMNIST("/Users/ishananand/Desktop/Pytorch/dataset/", train = True, transform=transforms.ToTensor(), download=True)
 train_data_Loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
 print(train_data.data.shape)
 
-test_data = datasets.FashionMNIST("/Users/ishananand/Desktop/Pytorch/", train = False, transform=transforms.ToTensor(), download=True)
+test_data = datasets.FashionMNIST("/Users/ishananand/Desktop/Pytorch/dataset/", train = False, transform=transforms.ToTensor(), download=True)
 test_data_Loader = DataLoader(test_data, batch_size=batch_size, shuffle=True)
 print(test_data.data.shape)
 

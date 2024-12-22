@@ -90,7 +90,7 @@ with torch.no_grad():
 plt.figure(figsize=(10,6))
 print(X.shape, y.shape, ridge_predictions.numpy().shape)
 plt.scatter(X.numpy(), y.numpy(), label='Data', color='blue')
-plt.plot(X.numpy(), ridge_predictions.numpy(), label='Lasso Fit', color='red', linewidth=2)
+plt.plot(X.numpy(), ridge_predictions.numpy(), label='Ridge Fit', color='red', linewidth=2)
 plt.plot(X.numpy(), normal_predictions.numpy(), label='Normal Fit', color='green', linewidth=2)
 plt.xlabel('X')
 plt.ylabel('y')

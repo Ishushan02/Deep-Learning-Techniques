@@ -55,13 +55,13 @@ class VariationalAutoEncoder(nn.Module):
 # print(mean.shape, sigma.shape, outImg.shape)
 
 
-device = torch.device("mps")
+device = torch.device("cpu")
 input_size = 28 * 28
 hiden_dimension = 200
 z_dimension = 20
-Num_Epochs = 10
-batch_size = 32
-learning_rate = 0.0001 #(Karapathy constant, he uses mostly this value in his experiments)
+Num_Epochs = 20
+batch_size = 128
+learning_rate = 0.0001 #(3e-4 Karapathy constant, he uses mostly this value in his experiments)
 
 # Dataset
 dataset = datasets.MNIST("dataset", train=True, transform=transforms.ToTensor(), download=True)
@@ -69,6 +69,7 @@ train_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
 vae_model = VariationalAutoEncoder(input_dim=input_size, hidden_dim=hiden_dimension, z_dim=z_dimension).to(device)
 optimizer = optim.Adam(vae_model.parameters(), lr=learning_rate)
 lossFn = nn.BCELoss(reduction="sum") # Binary Cross Entropy mostly used for 
+                    # reduction = "mean"
 
 
 # Start Training
@@ -96,7 +97,43 @@ for epoch in range(Num_Epochs):
 torch.save(vae_model.state_dict(), f = "/Users/ishananand/Desktop/Pytorch/Model/vae.pth")
 print(f"Model saved to Model Path")
 
+def inference(digit, num_examples = 1):
+    '''
+    Generate num_examples of a particular digit, we 
+    generally extract an example of each digit and then we sample from mean and sigma 
+    from its sample
 
+    After sampling we can directly execute Decoder Block for generation
+    '''
+
+    images = []
+    idx = 0
+    for x, y in dataset:
+        if y == idx:
+            images.append(x)
+            idx += 1
+        if idx == 10:
+            break
+
+    encodings_digit = []
+    for d in range(10):
+        with torch.no_grad():
+            print(images[d].shape)
+            mu, sigma = vae_model.encoder(images[d].view(1, 784))
+        encodings_digit.append((mu, sigma))
+
+    mu, sigma = encodings_digit[digit]
+    for example in range(num_examples):
+        epsilon = torch.randn_like(sigma)
+        z = mu + sigma * epsilon
+        out = vae_model.decoder(z)
+        out = out.view(-1, 1, 28, 28)
+        # out.reshape(128, 128)
+        save_image(out, f"generated/generated_{digit}_ex{example}.png")
+
+    
+for idx in range(10):
+    inference(idx, num_examples=1)
 
 if __name__=="__main__":
     

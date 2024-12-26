@@ -1,12 +1,18 @@
 import torch
+import torchvision.datasets as datasets
+from tqdm import tqdm # For progress bar
+from torchvision import transforms
 import torch.nn.functional as Fn
 import torch.nn as nn
+from torch import optim
+from torchvision.utils import save_image
+from torch.utils.data import DataLoader
 
 
 # Main Procedure is Input Image --> Hidden Dimension --> mean, variance, --> Parametarization trick, --> Decoder --> Output Image
 class VariationalAutoEncoder(nn.Module):
 
-    def __init__(self, input_dim, hidden_dim = 100, z_dim = 20):
+    def __init__(self, input_dim, hidden_dim = 200, z_dim = 20):
         super().__init__()
 
         #encoder
@@ -47,6 +53,50 @@ class VariationalAutoEncoder(nn.Module):
 # vae = VariationalAutoEncoder(28 * 28)
 # mean, sigma, outImg= vae(x)
 # print(mean.shape, sigma.shape, outImg.shape)
+
+
+device = torch.device("mps")
+input_size = 28 * 28
+hiden_dimension = 200
+z_dimension = 20
+Num_Epochs = 10
+batch_size = 32
+learning_rate = 0.0001 #(Karapathy constant, he uses mostly this value in his experiments)
+
+# Dataset
+dataset = datasets.MNIST("dataset", train=True, transform=transforms.ToTensor(), download=True)
+train_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
+vae_model = VariationalAutoEncoder(input_dim=input_size, hidden_dim=hiden_dimension, z_dim=z_dimension).to(device)
+optimizer = optim.Adam(vae_model.parameters(), lr=learning_rate)
+lossFn = nn.BCELoss(reduction="sum") # Binary Cross Entropy mostly used for 
+
+
+# Start Training
+for epoch in range(Num_Epochs):
+    loop = tqdm(enumerate(train_loader))
+    for i, (x, y) in loop:
+        # FOrward pass
+        x = x.to(device).view(x.shape[0], input_size)
+        mean, sigma, outputImage = vae_model(x)
+
+        #loss
+        reconstructLoss = lossFn(outputImage, x) # reconstruction loss
+        kl_divergenceLoss = -1 * torch.sum(1 + torch.log(sigma.pow(2)) - mean.pow(2)-sigma.pow(2)) #klDiv loss
+        
+        # backporop
+        loss = reconstructLoss + kl_divergenceLoss
+        optimizer.zero_grad() # no accumulated grad from before
+        loss.backward()
+        optimizer.step()
+
+        loop.set_postfix(loss = loss.item())
+
+
+
+torch.save(vae_model.state_dict(), f = "/Users/ishananand/Desktop/Pytorch/Model/vae.pth")
+print(f"Model saved to Model Path")
+
+
 
 if __name__=="__main__":
     

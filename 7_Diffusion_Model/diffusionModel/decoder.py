@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.nn import functional as Fn
 from decoder import VAE_AttentionBlock, VAE_ResidualBlock
 
-class VAEncoder(nn.Sequential):
+class VariationalAutoEncoder(nn.Sequential):
 
     '''
     So, basically the work of the Encoder is to reduce the dimension

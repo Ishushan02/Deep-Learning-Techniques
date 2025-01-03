@@ -44,7 +44,7 @@ class VAE_ResidualBlock(nn.Module):
         # we get image with batch, inChannel, height, width    
 
         # storing initial layer for propagating it at the end (skip Connection and transfering initial Gradients)
-        initialLayer = x 
+        initialLayer = x # residue to pass to future layer
         x = self.groupNorm1(x)
         x = Fn.silu(x)
         x = self.conv1(x)
@@ -56,6 +56,47 @@ class VAE_ResidualBlock(nn.Module):
         return x + self.residualLayer(initialLayer) # skip connection and mitigating gradients
     
         
+class VAE_AttentionBlock(nn.Module):
+
+    def __init__(self, inChannel:int):
+        super().__init__()
+        self.groupNorm = nn.GroupNorm(num_groups=32, num_channels=inChannel)
+        self.attention = selfAttention(1, inChannel)
+
+    def forward(self, x:torch.Tensor) -> torch.Tensor:
+
+        '''
+        Store initial layer for skip connection
+        perfrom self attention (within each pixels of the feature vector, )
+        return the output by adding residue to the self attention output
+        '''
+
+        initial_layer = x # residue to pass to future layer
+        x = self.groupNorm(x)
+        # (batch, channel, height, width)
+        n, c, h, w = x.shape 
+
+        # doing all the process for self attention (as Q, K and V are same in self attention)
+        # (batch, channel, height, width) ->  (batch, channel, height * width)
+        x = x.view(n, c, h * w)
+
+        # (batch, channel, height * width) -> (batch, height * width, channel)
+        x = x.transpose(-1, -2)
+
+        # self attention so all Q, K, V will be same
+        x = self.attention(x)
+
+        # (batch, height * width, channel) -> (batch, channel, height * width)
+        x = x.transpose(-1, -2)
+
+        # (batch, channel, height * width) ->(batch, channel, height,  width)
+        x = x.view((n, c, h, w))
+
+        
+        return x + initial_layer
+
+
+
 
 
 

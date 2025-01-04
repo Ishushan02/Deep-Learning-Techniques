@@ -14,6 +14,7 @@ class SelfAttention(nn.Module):
     - out_proj_bias is the bias term which we add in the output matrix, (out matrix when multiplied 
         to each(Q, K, V) concatenated heads after mutilplitcation with INP matrix combinely takes in effect)
 
+        heads = head, d_embed = height * width
     '''
 
     def __init__(self, heads:int, d_embed:int, in_proj_bias = True, out_proj_bias = True):
@@ -36,18 +37,26 @@ class SelfAttention(nn.Module):
         '''
 
         input_shape = x.shape
+        # batchsize, height*width, channel
         batch_size, seq_len, d_embed = input_shape
+
+        # batch_size, height * width, heads,  (batch_size, height*width, head, channel/heads)
         intermediate_shape = (batch_size, seq_len, self.n_heads, self.d_head)
 
         # batch_size, seq_len, d_embed -> batch_size, seq_len, d_embed * 3 --> 3 tensors of batch_size, seq_len, d_embed
+        # same as above --> OP is 3 tensors of (batch_size, height*width, channel)
         query, key, value = self.in_proj(x).chunk(3, dim = -1)
 
         # batch_size, seq_len, d_embed -> (batch_size, seq_len, H, d_head / H) -> (batch_size, H, seq_len, d_head/H)
+        # same as above (batch_size, height*width, channel) --> (batch_size, height*width, head, channel/head) --> below
+        #  --> batch_size, head, height*width, channel/head
         query = query.view(intermediate_shape).transpose(1, 2)
         key = key.view(intermediate_shape).transpose(1, 2)
         value = value.view(intermediate_shape).transpose(1, 2)
 
         # batch, H, seq_len, seq_len 
+        # (batch_size, head, height*width, channel/head) * (batch_size, head, channel.head, head * width) --> below
+        #  batch_size, head,  height*width, height*width
         weight = query @ key.transpose(-1, -2)
 
         if mask:
@@ -60,18 +69,24 @@ class SelfAttention(nn.Module):
         weight = Fn.softmax(weight, dim=-1)
         
         # batch, H, seq_len, seq_len * batch, H, seq_len, dim/head  -> batch, head, seq_len, dim/head
+        # (batch_size, head,  height*width, height*width) . (batch_size, head,  height*width, channel/head) --> below
+        # --> (batch_size, head, height*width, channel/head) 
         output = weight @ value
 
         #  batch, head, seq_len, dim/head ->  batch, seq_len, head, dim/head
+        # (batch_size, head, height*width, channel/head)  --> (batch_size, height*width, head, channel/head) 
         output = output.transpose(1, 2)
 
         # batch, seq_len, head, dim/head  -> batch, seq_len, dim
+        # (batch_size, height*width, head, channel/head) --> (batchsize, height*width, channel)
         output = output.reshape(input_shape)
 
         # multiply with out matrix
+        # (batchsize, height*width, channel) * (batch, channel, channel)
         output = self.out_proj(output)
 
         # batch, seq_len, dim
+        # (batch_size, head*width, channel)
         return output
 
 

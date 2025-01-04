@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as Fn
 from encoder import VariationalAutoEncoder
-from attention import selfAttention
+from attention import SelfAttention
 
 
 class VAE_ResidualBlock(nn.Module):
@@ -61,7 +61,7 @@ class VAE_AttentionBlock(nn.Module):
     def __init__(self, inChannel:int):
         super().__init__()
         self.groupNorm = nn.GroupNorm(num_groups=32, num_channels=inChannel)
-        self.attention = selfAttention(1, inChannel)
+        self.attention = SelfAttention(1, inChannel)
 
     def forward(self, x:torch.Tensor) -> torch.Tensor:
 

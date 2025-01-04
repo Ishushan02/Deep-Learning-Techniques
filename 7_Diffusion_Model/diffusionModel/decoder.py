@@ -104,10 +104,77 @@ class VariationalAutoDecoder(nn.Sequential):
     '''
     The main functionality of Decoder is to enhance the image dimension
     from the (reduced dimension) by Encoder
+
+    We get below input and convert it to the desired Output
+    (batch_size, 4, height/8, width / 8) --> (batch, channel, height, width)
     '''
 
     def __init__(self):
         super.__init__(
+            # (batch_size, 4, height/8, width / 8) -> (batch_size, 4, height/8, width / 8)
+            nn.Conv2d(in_channels=4, out_channels=4, kernel_size=1, padding=0),
 
+            # (batch_size, 4, height/8, width / 8) --> (batch_size, 512, height/8, width / 8)
+            nn.Conv2d(in_channels=4, out_channels=512, kernel_size=3, padding=1),
+
+            VAE_ResidualBlock(512, 512),
+            VAE_AttentionBlock(512),
+
+            VAE_ResidualBlock(512, 512),
+            VAE_ResidualBlock(512, 512),
+            VAE_ResidualBlock(512, 512),
+            VAE_ResidualBlock(512, 512), #(batch_size, 512, height/8, width / 8)
+
+            #(batch_size, 512, height/8, width / 8) -> (batch_size, 512, height/4, width/4)
+            nn.Upsample(scale_factor=2),
+
+            # (batch_size, 512, height/4, width/4) -> (batch_size, 512, height/4, width/4)
+            nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1),
+
+            VAE_ResidualBlock(512, 512),
+            VAE_ResidualBlock(512, 512),
+            VAE_ResidualBlock(512, 512),
+            
+            # (batch_size, 512, height/4, width/4) -> (batch_size, 512, height/2, width/2) 
+            nn.Upsample(scale_factor=2),
+
+            # (batch_size, 512, height/2, width/2) -> (batch_size, 512, height/2, width/2)
+            nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1),
+
+            VAE_ResidualBlock(512, 256),
+            VAE_ResidualBlock(256, 256),
+            VAE_ResidualBlock(256, 256),
+
+            # (batch_size, 256, height/2, width/2) -> (batch_size, 256, height, width) 
+            nn.Upsample(scale_factor=2),
+
+            # (batch_size, 256, height, width) -> (batch_size, 256, height, width)
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1),
+
+            # (batch_size, 256, height, width) -> (batch_size, 128, height, width)
+            VAE_ResidualBlock(256, 128),
+            VAE_ResidualBlock(128, 128),
+            VAE_ResidualBlock(128, 128),
+
+            nn.GroupNorm(num_groups=32, num_channels=128),
+
+            nn.SiLU(),
+
+            # (batch_size, 128, height, width) -> (batch_size, 3, height, width)
+            nn.Conv2d(in_channels=128, out_channels=3, kernel_size=3, padding=1)
         )
+
+    def forward(self, x:torch.Tensor):
+        '''
+            x is (batch_size, 4, height/8, width / 8) 
+        '''
+
+        # nullifying the scaling parameter
+        x = x / 0.18215
+
+        for module in self:
+            x = module(x)
+
+        # (batch_size, 3, height, width)
+        return x
 

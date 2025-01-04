@@ -105,6 +105,7 @@ class VariationalAutoEncoder(nn.Sequential):
         # but we want our distribution to be normalized with mean = 0 and std = I
         # so, Z(0, 1) -> X(mean, std)
         # How do we convert it , X = mean + std * Z (this is called as Sampling from distribution)
+        # (Batch_Size, 4, Height / 8, Width / 8) -> (Batch_Size, 4, Height / 8, Width / 8)
         X = mean + std * noise
 
         # Scaling it for better calculation (It is there in Original Paper)

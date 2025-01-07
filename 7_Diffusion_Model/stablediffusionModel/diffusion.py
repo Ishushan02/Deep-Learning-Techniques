@@ -4,6 +4,29 @@ from torch.nn import functional as Fn
 from attention import SelfAttention, CrossAttention
 
 
+class TimeEmbedding(nn.Module):
+
+    def __init__(self, n_embed):
+        super().__init__()
+
+        self.linear1 = nn.Linear(in_features=n_embed, out_features=4 * n_embed)
+        self.linear2 = nn.Linear(in_features=4 * n_embed, out_features=4 * n_embed)
+
+    def forward(self, x:torch.Tensor):
+        '''
+        Nothing fancy hear, just 2 linear layers with Silu Activation
+        input is (1, 320) --> (1, 1280)
+        '''
+
+        x = self.linear1(x)
+
+        x = nn.SiLU(x)
+
+        x = self.linear2(x)
+
+        return x
+
+
 class Diffusion:
     '''
     It is basically our diffusion architecture which kcombines all the procedure

@@ -26,6 +26,16 @@ class TimeEmbedding(nn.Module):
 
         return x
 
+class UNET(nn.Module):
+    '''
+    So Unet is made up of Encoder, Decoder ab=nd a bottle neck layer in between both of them
+    There are also Skip Connections if you see in between the Encoders and Decoders which connects them 
+
+    
+    '''
+    def __init__(self,):
+        super().__init__()
+
 
 class Diffusion:
     '''
@@ -36,8 +46,8 @@ class Diffusion:
 
     def __init__(self):
         self.time_embedding = TimeEmbedding(320)
-        self.unet = Unet()
-        self.final = UnetOutputLayer(320, 4)
+        self.unet = UNET()
+        self.final = UNETOutputLayer(320, 4)
 
     def forward(self, latent:torch.Tensor, context: torch.Tensor, time:torch.Tensor):
         '''

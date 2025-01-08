@@ -52,6 +52,20 @@ class SwitchSequential(nn.Sequential):
         return latent
 
 
+class Upsample(nn.Module):
+
+    def __init__(self, channels:int ):
+        super().__init__()
+        self.conv = nn.Conv2d(in_channels=channels, out_channels=channels, kernel_size=3, padding=1)
+
+    def forward(self, x):
+        # batch_suze, channel, height, width -> batch_suze, channel, height * 2, width * 2
+        x = Fn.interpolate(x, scale_factor=2, mode="nearest")
+        x = self.conv(x)
+
+        return x
+        
+
 
 
 class UNET(nn.Module):
@@ -64,6 +78,7 @@ class UNET(nn.Module):
     def __init__(self,):
         super().__init__()
 
+        # Increase the Number of Features and decrease it's size
         self.encoders = nn.Module([
             # bathc_size, 4, height/8, width/8 -> bathc_size, 640, height/8, width/8
             SwitchSequential(nn.Conv2d(in_channels=4, out_channels=320, kernel_size=3, padding=1)),
@@ -95,12 +110,49 @@ class UNET(nn.Module):
             SwitchSequential(UnetResidualBlock(1280, 1280))
 
         ])
-
+        
+        # the bottle Neck Layer all features are squezzed
         self.bottleNeck = SwitchSequential(
             UnetResidualBlock(1280, 1280), 
             UnetAttentionBlock(8, 160),
             UnetResidualBlock(1280, 1280)
         )
+
+        # Do the opposite of Encoder, decrease the number of features and increase the image size
+        self.decoder = nn.Module([
+            # why is the input of Residual block doubled, now when you see the diagram
+            # there is a skip connection from encoder to decoder, that skip 
+            # connections adds up same amount of layer on top of it, so
+            # the input will be double of it.
+
+            # (Batch_Size, 2560, Height / 64, Width / 64) -> (Batch_Size, 1280, Height / 64, Width / 64)
+            SwitchSequential(UnetResidualBlock(2560, 1280)),
+
+            SwitchSequential(UnetResidualBlock(2560, 1280)),
+
+            SwitchSequential(UnetResidualBlock(2560, 1280), Upsample(1280)),
+
+            SwitchSequential(UnetResidualBlock(2560, 1280), UnetAttentionBlock(8, 160)),
+
+            SwitchSequential(UnetResidualBlock(2560, 1280), UnetAttentionBlock(8, 160)),
+
+            SwitchSequential(UnetResidualBlock(1920, 1280), UnetAttentionBlock(8, 160), Upsample(1280)),
+
+            SwitchSequential(UnetResidualBlock(1920, 640), UnetAttentionBlock(8, 80)),
+
+            SwitchSequential(UnetResidualBlock(1280, 640), UnetAttentionBlock(8, 80)),
+
+            SwitchSequential(UnetResidualBlock(960, 640), UnetAttentionBlock(8, 80), Upsample(640)),
+
+            SwitchSequential(UnetResidualBlock(960, 320), UnetAttentionBlock(8, 40)),
+
+            SwitchSequential(UnetResidualBlock(640, 320), UnetAttentionBlock(8, 40)),
+
+            # (Batch_Size, 640, Height / 8, Width / 8) -> (Batch_Size, 320, Height / 8, Width / 8) -> (Batch_Size, 320, Height / 8, Width / 8)
+            SwitchSequential(UnetResidualBlock(640, 320), UnetAttentionBlock(8, 40)),
+
+        ])
+
 
 
 class Diffusion:

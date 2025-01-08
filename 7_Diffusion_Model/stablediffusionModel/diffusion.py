@@ -54,6 +54,8 @@ class UnetResidualBlock(nn.Module):
 
     def forward(self, feature, time):
         # batch_size, inChannel, height, width ; Time(1, 1280)
+
+        # (Batch_Size, In_Channels, Height, Width) -> (Batch_Size, In_Channels, Height, Width)
         residue = feature
         feature = self.groupNorm1(feature)
         feature = Fn.silu(feature)
@@ -66,8 +68,13 @@ class UnetResidualBlock(nn.Module):
         merged = self.groupNorm2(merged)
         merged = Fn.silu(merged)
         merged = self.conv2(merged)
-
+        
+        
+        # (Batch_Size, Out_Channels, Height, Width) + (Batch_Size, Out_Channels, Height, Width) -->
+        # --> (Batch_Size, Out_Channels, Height, Width)
         return merged + self.residualLayer(residue)
+
+
 
 
 
@@ -98,6 +105,8 @@ class SwitchSequential(nn.Sequential):
         return latent
 
 
+
+
 class Upsample(nn.Module):
 
     def __init__(self, channels:int ):
@@ -111,6 +120,7 @@ class Upsample(nn.Module):
 
         return x
         
+
 
 
 
@@ -200,6 +210,10 @@ class UNET(nn.Module):
         ])
 
 
+
+
+
+
 class UNETOutputLayer(nn.Module):
 
     def __init__(self, inChannel, outChannel):
@@ -216,6 +230,14 @@ class UNETOutputLayer(nn.Module):
 
         # batch_size, 4, height / 8, width /8
         return x
+
+
+
+
+
+
+
+
 
 class Diffusion:
     '''

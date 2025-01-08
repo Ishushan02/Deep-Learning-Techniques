@@ -26,6 +26,34 @@ class TimeEmbedding(nn.Module):
 
         return x
 
+class SwitchSequential(nn.Sequential):
+    '''
+    The image embedding which is latent
+    THe sentence embedding which is Context
+    The time embedding which is time
+
+    UnetAttentionBlock so, how will you send image and Context combinely into UNET
+    thats where Cross attention comes, here The UnetAttention block will calculate the cross 
+    attention between the latents and Context and send them as input into Unet
+
+    UnetResidualBlock will match our latents with the time step
+
+    '''
+
+    def forward(self, latent:torch.Tensor, context:torch.Tensor, time:torch.Tensor) -> torch.Tensor:
+        for layer in self:
+            if isinstance(layer, UnetAttentionBlock):
+                latent = layer(latent, context)
+            elif isinstance(layer, UnetResidualBlock):
+                latent = layer(latent, time)
+            else:
+                latent = layer(latent)
+        
+        return latent
+
+
+
+
 class UNET(nn.Module):
     '''
     So Unet is made up of Encoder, Decoder ab=nd a bottle neck layer in between both of them
@@ -35,6 +63,14 @@ class UNET(nn.Module):
     '''
     def __init__(self,):
         super().__init__()
+
+        self.encoders = nn.Module([
+            SwitchSequential(nn.Conv2d(in_channels=4, out_channels=320, kernel_size=3, padding=1)),
+
+            SwitchSequential(UnetResidualBlock()),
+
+
+        ])
 
 
 class Diffusion:

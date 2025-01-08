@@ -94,9 +94,13 @@ class UNET(nn.Module):
             # bathc_size, 1280, height/64, width/64
             SwitchSequential(UnetResidualBlock(1280, 1280))
 
-
-
         ])
+
+        self.bottleNeck = SwitchSequential(
+            UnetResidualBlock(1280, 1280), 
+            UnetAttentionBlock(8, 160),
+            UnetResidualBlock(1280, 1280)
+        )
 
 
 class Diffusion:

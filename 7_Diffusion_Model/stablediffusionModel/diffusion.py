@@ -154,6 +154,22 @@ class UNET(nn.Module):
         ])
 
 
+class UNETOutputLayer(nn.Module):
+
+    def __init__(self, inChannel, outChannel):
+        super().__init__()
+        self.groupnorm = nn.GroupNorm(num_groups=32, num_channels=inChannel)
+        self.conv = nn.Conv2d(in_channels=inChannel, out_channels=outChannel, kernel_size=3, padding=1)
+
+    def forward(self, x):
+        # batch_size, 320, height / 8, width /8 -> batch_size, 4, height / 8, width /8
+        x = self.groupnorm(x)
+        x = nn.SiLU(x)
+
+        x = self.conv(x)
+
+        # batch_size, 4, height / 8, width /8
+        return x
 
 class Diffusion:
     '''

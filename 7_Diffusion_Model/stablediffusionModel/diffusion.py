@@ -56,7 +56,7 @@ class SwitchSequential(nn.Sequential):
 
 class UNET(nn.Module):
     '''
-    So Unet is made up of Encoder, Decoder ab=nd a bottle neck layer in between both of them
+    So Unet is made up of Encoder, Decoder and a bottle neck layer in between both of them
     There are also Skip Connections if you see in between the Encoders and Decoders which connects them 
 
     
@@ -65,9 +65,35 @@ class UNET(nn.Module):
         super().__init__()
 
         self.encoders = nn.Module([
+            # bathc_size, 4, height/8, width/8 -> bathc_size, 640, height/8, width/8
             SwitchSequential(nn.Conv2d(in_channels=4, out_channels=320, kernel_size=3, padding=1)),
 
-            SwitchSequential(UnetResidualBlock()),
+            SwitchSequential(UnetResidualBlock(320, 320), UnetAttentionBlock(8, 40)),
+
+            SwitchSequential(UnetResidualBlock(320, 320), UnetAttentionBlock(8, 40)),
+
+            # bathc_size, 320, height/8, width/8 -> bathc_size, 320, height/16, width/16
+            SwitchSequential(nn.Conv2d(in_channels=320, out_channels=320, kernel_size=3, padding=1, stride=2)),
+
+            SwitchSequential(UnetResidualBlock(320, 640), UnetAttentionBlock(8, 80)),
+
+            SwitchSequential(UnetResidualBlock(640, 640), UnetAttentionBlock(8, 80)),
+
+            # bathc_size, 640, height/16, width/16 -> bathc_size, 640, height/32, width/32
+            SwitchSequential(nn.Conv2d(in_channels=640, out_channels=640, kernel_size=3, padding=1, stride=2)),
+
+            SwitchSequential(UnetResidualBlock(640, 1280), UnetAttentionBlock(8, 160)),
+
+            SwitchSequential(UnetResidualBlock(1280, 1280), UnetAttentionBlock(8, 160)),
+
+            # bathc_size, 1280, height/32, width/32 -> bathc_size, 1280, height/64, width/64
+            SwitchSequential(nn.Conv2d(in_channels=1280, out_channels=1280, kernel_size=3, padding=1, stride=2)),
+
+            SwitchSequential(UnetResidualBlock(1280, 1280)),
+
+            # bathc_size, 1280, height/64, width/64
+            SwitchSequential(UnetResidualBlock(1280, 1280))
+
 
 
         ])

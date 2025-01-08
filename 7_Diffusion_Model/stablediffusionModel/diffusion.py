@@ -26,6 +26,52 @@ class TimeEmbedding(nn.Module):
 
         return x
 
+
+
+
+
+class UnetResidualBlock(nn.Module):
+
+    '''
+    Basically this block merges the TIme Embed, to the Inp Vector of Latents and context
+    It is just to relate the time embedding to latents and contexts
+    Hence the output will also be varied based on time at whihc Noise is infused
+    '''
+
+    def __init__(self, inChannel, outChannel, n_time = 1280):
+        super().__init__()
+        self.groupNorm1 = nn.GroupNorm(num_groups=32, num_channels=inChannel)
+        self.conv1 = nn.Conv2d(in_channels=inChannel, out_channels=outChannel, kernel_size=3, padding=1)
+        self.linearTime = nn.Linear(in_features=n_time, out_features=outChannel)
+        self.groupNorm2 = nn.GroupNorm(num_groups=32, num_channels=outChannel)
+        self.conv2 = nn.Conv2d(in_channels=outChannel, out_channels=outChannel, kernel_size=3, padding=1)
+
+        if inChannel == outChannel:
+            self.residualLayer = nn.Identity()
+        else:
+            self.residualLayer = nn.Conv2d(in_channels=inChannel, out_channels=outChannel, kernel_size=1, padding=0)
+
+
+    def forward(self, feature, time):
+        # batch_size, inChannel, height, width ; Time(1, 1280)
+        residue = feature
+        feature = self.groupNorm1(feature)
+        feature = Fn.silu(feature)
+        feature = self.conv1(feature)
+        time = self.linearTime(time)
+
+        # We are merging the time embedding and features, now as time embed is not same increasing it's size by unsqueezinf
+        merged = feature + time.unsqueeze(-1).unsqueeze(-1)
+    
+        merged = self.groupNorm2(merged)
+        merged = Fn.silu(merged)
+        merged = self.conv2(merged)
+
+        return merged + self.residualLayer(residue)
+
+
+
+
 class SwitchSequential(nn.Sequential):
     '''
     The image embedding which is latent
@@ -164,7 +210,7 @@ class UNETOutputLayer(nn.Module):
     def forward(self, x):
         # batch_size, 320, height / 8, width /8 -> batch_size, 4, height / 8, width /8
         x = self.groupnorm(x)
-        x = nn.SiLU(x)
+        x = Fn.silu(x)
 
         x = self.conv(x)
 

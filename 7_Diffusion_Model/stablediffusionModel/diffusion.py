@@ -27,6 +27,85 @@ class TimeEmbedding(nn.Module):
         return x
 
 
+class UnetAttentionBlock(nn.Module):
+   '''
+   UnetAttentionBlock so, how will you send image and Context combinely into UNET
+    thats where Cross attention comes, here The UnetAttention block will calculate the cross 
+    attention between the latents and Context and send them as input into Unet
+   '''
+   
+   def __init__(self, n_heads:int, n_embed:int, d_context=768):
+       super().__init__()
+       channels = n_heads * n_embed
+
+       self.groupNorm = nn.GroupNorm(32, num_channels=channels, eps=1e-6)
+       self.conv_input = nn.Conv2d(in_channels=channels, out_channels=channels, kernel_size=1, padding=0)
+       self.layer_norm1 = nn.LayerNorm(channels)
+       self.attention_1 = SelfAttention(heads=n_heads, d_embed=channels, in_proj_bias=False)
+       self.layer_norm2 = nn.LayerNorm(channels)
+       self.attention_2 = CrossAttention(n_heads, channels, d_context, in_proj_bias = False)
+       self.layer_norm3 = nn.LayerNorm(channels)
+       self.linear1 = nn.Linear(in_features=channels, out_features=4 * channels * 2)
+       self.linear2 = nn.Linear(in_features=4 * channels * 2, out_features= channels )
+       self.conv_output = nn.Conv2d(in_channels=channels, out_channels=channels, kernel_size=1, padding=0)
+
+   def forward(self, x, context):
+       #    batch_size, features, height, width
+       # context: (batch_size, seq_len, Dim)
+       residue_long = x
+
+       x = self.groupNorm(x)
+       x = self.conv_input(x)
+
+       n, c, h, w = x.shape
+
+      #  batch_size, features, height, width -> batch_size, features, height * width
+       x= x.view((n, c, h * w))
+
+       # batch_size, features, height * width -> batch_size, height * width, features
+       x = x.transpose(-1. -2)
+
+       # Normailization with Self attention and skip Connection
+
+
+       residue_short = x
+
+       x = self.layer_norm1(x)
+       self.attention_1(x)
+       x += residue_short
+
+       # Normalization + cross Attention and skip conection
+
+       residue_short = x
+
+       x = self.layer_norm2(x) 
+       self.attention_2(x) # cross attention
+       x += residue_short
+
+
+       # Normalization + Feed Forward +  Skip Connection
+       residue_short = x
+
+       x = self.layer_norm3(x)
+       x, gate = self.linear1(x).chunk(2, dim = -1)
+
+       x = x * Fn.gelu(gate)
+
+       x = self.linear2(x)
+
+       x += residue_short
+
+       # batch_size, height * width, features -> batch_size, features, height * width
+       x = x.transpose(-1. -2)
+
+       #  batch_size, features, height * width -> batch_size, features, height, width
+       x= x.view((n, c, h,  w))
+
+       return self.conv_output(x) + residue_long
+
+       
+
+
 
 
 
